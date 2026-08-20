@@ -1,0 +1,267 @@
+ทดลองข้อความ 100 - 100000 ตัวอักษร
+import java.util.*;
+
+public class TextEditorExperiment {
+
+
+    static class SnapshotEditor {
+        String document;
+        Stack<String> undoStack = new Stack<>();
+        Stack<String> redoStack = new Stack<>();
+
+        SnapshotEditor(String document) {
+            this.document = document;
+        }
+
+        void insert(int position, String text) {
+            if (position < 0 || position > document.length()) return;
+
+            // เก็บข้อความทั้งฉบับก่อนแก้ไข
+            undoStack.push(document);
+            redoStack.clear();
+
+            document = document.substring(0, position)
+                    + text
+                    + document.substring(position);
+        }
+
+        void undo() {
+            if (undoStack.isEmpty()) return;
+
+            redoStack.push(document);
+            document = undoStack.pop();
+        }
+
+        void redo() {
+            if (redoStack.isEmpty()) return;
+
+            undoStack.push(document);
+            document = redoStack.pop();
+        }
+
+        // คำนวณพื้นที่จากจำนวนตัวอักษรที่เก็บ
+        long getStorage() {
+            long total = 0;
+
+            for (String text : undoStack) {
+                total += text.length() * 2L;
+            }
+
+            for (String text : redoStack) {
+                total += text.length() * 2L;
+            }
+
+            return total;
+        }
+    }
+
+
+    // =========================
+    // Command / Delta Method
+    // =========================
+    static class Command {
+        String type;
+        int position;
+        String oldText;
+        String newText;
+
+        Command(String type, int position,
+                String oldText, String newText) {
+
+            this.type = type;
+            this.position = position;
+            this.oldText = oldText;
+            this.newText = newText;
+        }
+
+        // คำนวณข้อมูลข้อความที่ต้องเก็บ
+        long getStorage() {
+            long size = 0;
+
+            // position เป็น int = 4 bytes
+            size += 4;
+
+            if (type != null)
+                size += type.length() * 2L;
+
+            if (oldText != null)
+                size += oldText.length() * 2L;
+
+            if (newText != null)
+                size += newText.length() * 2L;
+
+            return size;
+        }
+    }
+
+
+    static class CommandEditor {
+        String document;
+        Stack<Command> undoStack = new Stack<>();
+        Stack<Command> redoStack = new Stack<>();
+
+        CommandEditor(String document) {
+            this.document = document;
+        }
+
+        void insert(int position, String text) {
+            if (position < 0 || position > document.length()) return;
+
+            document = document.substring(0, position)
+                    + text
+                    + document.substring(position);
+
+            undoStack.push(
+                    new Command("INSERT", position, "", text)
+            );
+
+            redoStack.clear();
+        }
+
+        void undo() {
+            if (undoStack.isEmpty()) return;
+
+            Command command = undoStack.pop();
+
+            if (command.type.equals("INSERT")) {
+
+                int start = command.position;
+                int length = command.newText.length();
+
+                document = document.substring(0, start)
+                        + document.substring(start + length);
+            }
+
+            redoStack.push(command);
+        }
+
+        void redo() {
+            if (redoStack.isEmpty()) return;
+
+            Command command = redoStack.pop();
+
+            if (command.type.equals("INSERT")) {
+
+                int position = command.position;
+
+                document = document.substring(0, position)
+                        + command.newText
+                        + document.substring(position);
+            }
+
+            undoStack.push(command);
+        }
+
+        long getStorage() {
+            long total = 0;
+
+            for (Command command : undoStack) {
+                total += command.getStorage();
+            }
+
+            for (Command command : redoStack) {
+                total += command.getStorage();
+            }
+
+            return total;
+        }
+    }
+
+
+    // =========================
+    // สร้างข้อความตามขนาดที่ต้องการ
+    // =========================
+    static String createText(int size) {
+
+        StringBuilder text = new StringBuilder();
+
+        for (int i = 0; i < size; i++) {
+            text.append("A");
+        }
+
+        return text.toString();
+    }
+
+
+    // =========================
+    // Main Experiment
+    // =========================
+    public static void main(String[] args) {
+
+        int[] textSizes = {100, 1000, 10000, 100000};
+
+        System.out.println(
+                "Size\tMethod\tUndo Time(ns)\tRedo Time(ns)\tStorage(bytes)"
+        );
+
+        for (int size : textSizes) {
+
+            String text = createText(size);
+
+            // -------------------------
+            // Snapshot
+            // -------------------------
+            SnapshotEditor snapshot =
+                    new SnapshotEditor(text);
+
+            snapshot.insert(
+                    snapshot.document.length() / 2,
+                    "AI"
+            );
+
+            long startUndo = System.nanoTime();
+            snapshot.undo();
+            long endUndo = System.nanoTime();
+
+            long undoTime =
+                    endUndo - startUndo;
+
+            long startRedo = System.nanoTime();
+            snapshot.redo();
+            long endRedo = System.nanoTime();
+
+            long redoTime =
+                    endRedo - startRedo;
+
+            System.out.println(
+                    size + "\tSnapshot\t"
+                            + undoTime + "\t\t"
+                            + redoTime + "\t\t"
+                            + snapshot.getStorage()
+            );
+
+
+            // -------------------------
+            // Command / Delta
+            // -------------------------
+            CommandEditor command =
+                    new CommandEditor(text);
+
+            command.insert(
+                    command.document.length() / 2,
+                    "AI"
+            );
+
+            startUndo = System.nanoTime();
+            command.undo();
+            endUndo = System.nanoTime();
+
+            undoTime =
+                    endUndo - startUndo;
+
+            startRedo = System.nanoTime();
+            command.redo();
+            endRedo = System.nanoTime();
+
+            redoTime =
+                    endRedo - startRedo;
+
+            System.out.println(
+                    size + "\tCommand\t"
+                            + undoTime + "\t\t"
+                            + redoTime + "\t\t"
+                            + command.getStorage()
+            );
+        }
+    }
+}
