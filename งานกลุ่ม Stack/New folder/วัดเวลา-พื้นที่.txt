@@ -1,0 +1,13 @@
+วัดเวลา
+long start = System.nanoTime();
+
+snapshot.undo();
+
+long end = System.nanoTime();
+
+long undoTime = end - start;
+
+วัดพื้นที่
+long storage = snapshot.getStorage();
+
+System.out.println("Storage: " + storage + " bytes");
