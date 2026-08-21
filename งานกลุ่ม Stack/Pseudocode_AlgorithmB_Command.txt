@@ -1,0 +1,84 @@
+==================================================
+ALGORITHM B: COMMAND / DELTA METHOD (PSEUDOCODE)
+==================================================
+
+ENUM Type: INSERT, DELETE, REPLACE
+
+CLASS Action:
+    id: STRING
+    type: Type
+    position: INTEGER
+    oldText: STRING
+    newText: STRING
+
+    CONSTRUCTOR(id, type, position, oldText, newText):
+        this.id = id
+        this.type = type
+        this.position = position
+        this.oldText = oldText
+        this.newText = newText
+
+CLASS TextEditorCommand:
+    document: STRING = ""
+    undoStack: STACK of Action
+    redoStack: STACK of Action
+    actionCount: INTEGER = 0
+
+    FUNCTION insert(pos, text):
+        IF pos < 0 THEN RETURN
+        IF pos > LENGTH(document) THEN
+            document = ""
+            pos = 0
+        INSERT text INTO document AT pos
+        actionCount = actionCount + 1
+        act = NEW Action("A" + actionCount, INSERT, pos, "", text)
+        PUSH act ONTO undoStack
+        CLEAR redoStack
+
+    FUNCTION delete(pos, length):
+        IF pos < 0 OR (pos + length) > LENGTH(document) OR length <= 0 THEN RETURN
+        deletedText = SUBSTRING OF document FROM pos TO (pos + length)
+        REMOVE CHARACTERS FROM document FROM pos TO (pos + length)
+        actionCount = actionCount + 1
+        act = NEW Action("A" + actionCount, DELETE, pos, deletedText, "")
+        PUSH act ONTO undoStack
+        CLEAR redoStack
+
+    FUNCTION replace(pos, length, newText):
+        IF pos < 0 OR (pos + length) > LENGTH(document) THEN RETURN
+        oldText = SUBSTRING OF document FROM pos TO (pos + length)
+        REPLACE CHARACTERS IN document FROM pos TO (pos + length) WITH newText
+        actionCount = actionCount + 1
+        act = NEW Action("A" + actionCount, REPLACE, pos, oldText, newText)
+        PUSH act ONTO undoStack
+        CLEAR redoStack
+
+    FUNCTION undo():
+        IF undoStack IS EMPTY THEN RETURN FALSE
+        act = POP undoStack
+        applyInverse(act)
+        PUSH act ONTO redoStack
+        RETURN TRUE
+
+    FUNCTION redo():
+        IF redoStack IS EMPTY THEN RETURN FALSE
+        act = POP redoStack
+        applyForward(act)
+        PUSH act ONTO undoStack
+        RETURN TRUE
+
+    FUNCTION applyForward(act):
+        IF act.type == INSERT THEN
+            INSERT act.newText INTO document AT act.position
+        ELSE IF act.type == DELETE THEN
+            REMOVE CHARACTERS FROM document AT act.position FOR LENGTH OF act.oldText
+        ELSE IF act.type == REPLACE THEN
+            REPLACE CHARACTERS IN document AT act.position FOR LENGTH OF act.oldText WITH act.newText
+
+    FUNCTION applyInverse(act):
+        IF act.type == INSERT THEN
+            REMOVE CHARACTERS FROM document AT act.position FOR LENGTH OF act.newText
+        ELSE IF act.type == DELETE THEN
+            INSERT act.oldText INTO document AT act.position
+        ELSE IF act.type == REPLACE THEN
+            REPLACE CHARACTERS IN document AT act.position FOR LENGTH OF act.newText WITH act.oldText

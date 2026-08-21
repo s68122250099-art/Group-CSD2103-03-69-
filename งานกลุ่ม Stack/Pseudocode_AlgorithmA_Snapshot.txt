@@ -1,0 +1,48 @@
+==================================================
+ALGORITHM A: SNAPSHOT METHOD (PSEUDOCODE)
+==================================================
+
+CLASS Snapshot:
+    textState: STRING
+    CONSTRUCTOR(textState):
+        this.textState = textState
+
+CLASS TextEditorSnapshot:
+    document: STRING = ""
+    undoStack: STACK of Snapshot
+    redoStack: STACK of Snapshot
+
+    FUNCTION insert(pos, text):
+        IF pos < 0 OR pos > LENGTH(document) THEN RETURN
+        saveState()
+        INSERT text INTO document AT pos
+        CLEAR redoStack
+
+    FUNCTION delete(pos, length):
+        IF pos < 0 OR (pos + length) > LENGTH(document) OR length <= 0 THEN RETURN
+        saveState()
+        REMOVE CHARACTERS FROM document FROM pos TO (pos + length)
+        CLEAR redoStack
+
+    FUNCTION replace(pos, length, newText):
+        IF pos < 0 OR (pos + length) > LENGTH(document) THEN RETURN
+        saveState()
+        REPLACE CHARACTERS IN document FROM pos TO (pos + length) WITH newText
+        CLEAR redoStack
+
+    FUNCTION saveState():
+        PUSH Snapshot(document) ONTO undoStack
+
+    FUNCTION undo():
+        IF undoStack IS EMPTY THEN RETURN FALSE
+        PUSH Snapshot(document) ONTO redoStack
+        previousState = POP undoStack
+        document = previousState.textState
+        RETURN TRUE
+
+    FUNCTION redo():
+        IF redoStack IS EMPTY THEN RETURN FALSE
+        PUSH Snapshot(document) ONTO undoStack
+        nextState = POP redoStack
+        document = nextState.textState
+        RETURN TRUE
