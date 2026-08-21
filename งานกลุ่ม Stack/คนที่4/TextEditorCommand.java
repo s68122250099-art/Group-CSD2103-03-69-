@@ -8,7 +8,11 @@ public class TextEditorCommand {
     private int actionCount = 0;
 
     public void insert(int pos, String text) {
-        if (pos < 0 || pos > document.length()) return;
+        if (pos < 0) return;
+        if (pos > document.length()) {
+            document.setLength(0);
+            pos = 0;
+        }
         document.insert(pos, text);
         Action act = new Action("A" + (++actionCount), Action.Type.INSERT, pos, "", text);
         undoStack.push(act);
