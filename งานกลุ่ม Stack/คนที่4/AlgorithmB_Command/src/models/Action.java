@@ -1,3 +1,5 @@
+package models;
+
 public class Action {
     public enum Type { INSERT, DELETE, REPLACE }
     

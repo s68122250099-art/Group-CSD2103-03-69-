@@ -1,12 +1,16 @@
+package main;
+
+import algorithms.TextEditorCommand;
 import java.util.Scanner;
 
-public class Main {
+public class MainAlgorithmB {
     public static void main(String[] args) {
         TextEditorCommand editor = new TextEditorCommand();
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.println("\nText: \"" + editor.getText() + "\"");
+            System.out.println("\n[Algorithm B - Command/Delta Method]");
+            System.out.println("Text: \"" + editor.getText() + "\"");
             System.out.println("1: Insert | 2: Delete | 3: Replace | 4: Undo | 5: Redo | 0: Exit");
             System.out.print("Select: ");
 
