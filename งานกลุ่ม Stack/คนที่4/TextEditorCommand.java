@@ -1,34 +1,75 @@
-import java.util.Scanner;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
-public class Main {
-    public static void main(String[] args) {
-        TextEditorCommand editor = new TextEditorCommand();
-        Scanner scanner = new Scanner(System.in);
+public class TextEditorCommand {
+    private StringBuilder document = new StringBuilder();
+    private Deque<Action> undoStack = new ArrayDeque<>();
+    private Deque<Action> redoStack = new ArrayDeque<>();
+    private int actionCount = 0;
 
-        while (true) {
-            System.out.println("\nText: \"" + editor.getText() + "\"");
-            System.out.println("1: Insert | 2: Delete | 3: Replace | 4: Undo | 5: Redo | 0: Exit");
-            System.out.print("Select: ");
-            int choice = scanner.nextInt();
+    public void insert(int pos, String text) {
+        if (pos < 0 || pos > document.length()) return;
+        document.insert(pos, text);
+        Action act = new Action("A" + (++actionCount), Action.Type.INSERT, pos, "", text);
+        undoStack.push(act);
+        redoStack.clear();
+    }
 
-            if (choice == 0) break;
-            switch (choice) {
-                case 1 -> {
-                    System.out.print("Position & Text: ");
-                    editor.insert(scanner.nextInt(), scanner.next());
-                }
-                case 2 -> {
-                    System.out.print("Position & Length: ");
-                    editor.delete(scanner.nextInt(), scanner.nextInt());
-                }
-                case 3 -> {
-                    System.out.print("Position, Length & New Text: ");
-                    editor.replace(scanner.nextInt(), scanner.nextInt(), scanner.next());
-                }
-                case 4 -> System.out.println(editor.undo() ? "Undo Done" : "Nothing to Undo");
-                case 5 -> System.out.println(editor.redo() ? "Redo Done" : "Nothing to Redo");
-            }
+    public void delete(int pos, int length) {
+        if (pos < 0 || pos + length > document.length() || length <= 0) return;
+        String deletedText = document.substring(pos, pos + length);
+        document.delete(pos, pos + length);
+        Action act = new Action("A" + (++actionCount), Action.Type.DELETE, pos, deletedText, "");
+        undoStack.push(act);
+        redoStack.clear();
+    }
+
+    public void replace(int pos, int length, String newText) {
+        if (pos < 0 || pos + length > document.length()) return;
+        String oldText = document.substring(pos, pos + length);
+        document.replace(pos, pos + length, newText);
+        Action act = new Action("A" + (++actionCount), Action.Type.REPLACE, pos, oldText, newText);
+        undoStack.push(act);
+        redoStack.clear();
+    }
+
+    public boolean undo() {
+        if (undoStack.isEmpty()) return false;
+        Action act = undoStack.pop();
+        applyInverse(act);
+        redoStack.push(act);
+        return true;
+    }
+
+    public boolean redo() {
+        if (redoStack.isEmpty()) return false;
+        Action act = redoStack.pop();
+        applyForward(act);
+        undoStack.push(act);
+        return true;
+    }
+
+    private void applyForward(Action act) {
+        if (act.getType() == Action.Type.INSERT) {
+            document.insert(act.getPosition(), act.getNewText());
+        } else if (act.getType() == Action.Type.DELETE) {
+            document.delete(act.getPosition(), act.getPosition() + act.getOldText().length());
+        } else if (act.getType() == Action.Type.REPLACE) {
+            document.replace(act.getPosition(), act.getPosition() + act.getOldText().length(), act.getNewText());
         }
-        scanner.close();
+    }
+
+    private void applyInverse(Action act) {
+        if (act.getType() == Action.Type.INSERT) {
+            document.delete(act.getPosition(), act.getPosition() + act.getNewText().length());
+        } else if (act.getType() == Action.Type.DELETE) {
+            document.insert(act.getPosition(), act.getOldText());
+        } else if (act.getType() == Action.Type.REPLACE) {
+            document.replace(act.getPosition(), act.getPosition() + act.getNewText().length(), act.getOldText());
+        }
+    }
+
+    public String getText() {
+        return document.toString();
     }
 }

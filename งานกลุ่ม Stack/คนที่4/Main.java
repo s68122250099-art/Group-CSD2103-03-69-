@@ -12,6 +12,7 @@ public class Main {
             int choice = scanner.nextInt();
 
             if (choice == 0) break;
+
             switch (choice) {
                 case 1 -> {
                     System.out.print("Position & Text: ");
@@ -27,6 +28,7 @@ public class Main {
                 }
                 case 4 -> System.out.println(editor.undo() ? "Undo Done" : "Nothing to Undo");
                 case 5 -> System.out.println(editor.redo() ? "Redo Done" : "Nothing to Redo");
+                default -> System.out.println("Invalid choice!");
             }
         }
         scanner.close();

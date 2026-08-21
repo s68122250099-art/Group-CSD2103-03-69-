@@ -1,11 +1,11 @@
 public class Action {
     public enum Type { INSERT, DELETE, REPLACE }
     
-    public String id;
-    public Type type;
-    public int position;
-    public String oldText;
-    public String newText;
+    private String id;
+    private Type type;
+    private int position;
+    private String oldText;
+    private String newText;
 
     public Action(String id, Type type, int position, String oldText, String newText) {
         this.id = id;
@@ -14,4 +14,10 @@ public class Action {
         this.oldText = oldText;
         this.newText = newText;
     }
+
+    public String getId() { return id; }
+    public Type getType() { return type; }
+    public int getPosition() { return position; }
+    public String getOldText() { return oldText; }
+    public String getNewText() { return newText; }
 }
